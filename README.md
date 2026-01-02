@@ -1,5 +1,7 @@
 # slogan
 
+[![Documentation](https://godoc.org/github.com/openclosed-dev/slogan?status.svg)](https://godoc.org/github.com/openclosed-dev/slogan/appinsights) [![Release](https://img.shields.io/github/release/openclosed-dev/slogan/all.svg)](https://github.com/openclosed-dev/slogan/releases)
+
 slogan is a [slog](https://pkg.go.dev/log/slog) Handler for submitting log records to [Azure Application Insights](https://learn.microsoft.com/en-us/azure/azure-monitor/app/app-insights-overview).
 
 ## Prerequisites
