@@ -2,7 +2,7 @@
 
 [![Documentation](https://godoc.org/github.com/openclosed-dev/slogan?status.svg)](https://godoc.org/github.com/openclosed-dev/slogan/appinsights) [![Release](https://img.shields.io/github/release/openclosed-dev/slogan/all.svg)](https://github.com/openclosed-dev/slogan/releases)
 
-slogan is a [slog](https://pkg.go.dev/log/slog) Handler for submitting log records to [Azure Application Insights](https://learn.microsoft.com/en-us/azure/azure-monitor/app/app-insights-overview).
+slogan is a Go module that provides a [slog](https://pkg.go.dev/log/slog) Handler implementation for submitting log records to [Azure Application Insights](https://learn.microsoft.com/en-us/azure/azure-monitor/app/app-insights-overview).
 
 ## Prerequisites
 
@@ -51,3 +51,8 @@ func main() {
 	slog.Info("hello", "count", 3)
 }
 ```
+
+## Known Issue
+
+This module depends on the module [github.com/microsoft/ApplicationInsights-Go](https://pkg.go.dev/github.com/microsoft/ApplicationInsights-Go) developed by Microsoft, that is not actively maintained for several years.
+While there seems to be no functional problem in the module, we need to constantly check the status of the project.
