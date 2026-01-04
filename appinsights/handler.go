@@ -114,25 +114,7 @@ func (h *Handler) Handle(_ context.Context, r slog.Record) error {
 // WithAttrs returns a new [Handler] whose attributes consists
 // of h's attributes followed by attrs.
 func (h *Handler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	if len(attrs) == 0 {
-		// Note: slog.Logger does not pass in empty slice
-		return h
-	}
-
-	newSize := len(h.attributes) + len(attrs)
-	newAttributes := make(map[string]string, newSize)
-	maps.Copy(newAttributes, h.attributes)
-	for _, a := range attrs {
-		addAttributeToMap(newAttributes, h.keyPrefix, a)
-	}
-
-	return &Handler{
-		opts:       h.opts,
-		client:     h.client,
-		level:      h.level,
-		keyPrefix:  h.keyPrefix,
-		attributes: newAttributes,
-	}
+	return h.withAttrs(attrs)
 }
 
 // WithGroup returns a new [Handler] with the given group appended to
@@ -140,20 +122,7 @@ func (h *Handler) WithAttrs(attrs []slog.Attr) slog.Handler {
 // The keys of all subsequent attributes, whether added by With or in a
 // Record, will be qualified by the sequence of group names.
 func (h *Handler) WithGroup(name string) slog.Handler {
-	if name == "" {
-		// Note: log.Logger does not pass in empty name
-		return h
-	}
-
-	newKeyPrefix := h.keyPrefix + name + "."
-
-	return &Handler{
-		opts:       h.opts,
-		client:     h.client,
-		level:      h.level,
-		keyPrefix:  newKeyPrefix,
-		attributes: maps.Clone(h.attributes),
-	}
+	return h.withGroup(name)
 }
 
 // Close flushes the buffered log records
@@ -234,5 +203,44 @@ func addAttributeGroupToMap(m map[string]string, keyPrefix string, g slog.Attr) 
 
 	for _, a := range attrs {
 		addAttributeToMap(m, keyPrefix, a)
+	}
+}
+
+func (h *Handler) withAttrs(attrs []slog.Attr) *Handler {
+	if len(attrs) == 0 {
+		// Note: slog.Logger does not pass in empty slice
+		return h
+	}
+
+	newSize := len(h.attributes) + len(attrs)
+	newAttributes := make(map[string]string, newSize)
+	maps.Copy(newAttributes, h.attributes)
+	for _, a := range attrs {
+		addAttributeToMap(newAttributes, h.keyPrefix, a)
+	}
+
+	return &Handler{
+		opts:       h.opts,
+		client:     h.client,
+		level:      h.level,
+		keyPrefix:  h.keyPrefix,
+		attributes: newAttributes,
+	}
+}
+
+func (h *Handler) withGroup(name string) *Handler {
+	if name == "" {
+		// Note: slog.Logger does not pass in empty name
+		return h
+	}
+
+	newKeyPrefix := h.keyPrefix + name + "."
+
+	return &Handler{
+		opts:       h.opts,
+		client:     h.client,
+		level:      h.level,
+		keyPrefix:  newKeyPrefix,
+		attributes: maps.Clone(h.attributes),
 	}
 }
