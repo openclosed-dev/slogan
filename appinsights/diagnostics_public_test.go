@@ -11,7 +11,7 @@ func TestEnableDiagnostics(t *testing.T) {
 
 	appinsights.EnableDiagnostics()
 
-	server := newStubServer()
+	server := newStubServer(8)
 	defer server.Close()
 
 	opts := appinsights.NewHandlerOptions(nil)

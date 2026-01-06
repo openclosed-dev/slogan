@@ -35,12 +35,12 @@ type stubServer struct {
 	items chan *telemetry
 }
 
-func newStubServer() *stubServer {
+func newStubServer(capacity int) *stubServer {
 	mux := http.NewServeMux()
 
 	s := &stubServer{
 		httptest.NewServer(mux),
-		make(chan *telemetry, 8),
+		make(chan *telemetry, capacity),
 	}
 
 	mux.Handle("/v2/track", s)
@@ -60,6 +60,19 @@ func (s *stubServer) getTelemetry() *telemetry {
 	return <-s.items
 }
 
+func (s *stubServer) telemetryItems() []*telemetry {
+
+	count := len(s.items)
+	items := make([]*telemetry, 0, count)
+
+	for count > 0 {
+		items = append(items, <-s.items)
+		count--
+	}
+
+	return items
+}
+
 func (s *stubServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	items, err := decodeRequestBody(req)
@@ -68,11 +81,11 @@ func (s *stubServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-
 	for _, item := range items {
 		s.items <- item
 	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func decodeRequestBody(req *http.Request) ([]*telemetry, error) {

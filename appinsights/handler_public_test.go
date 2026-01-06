@@ -13,7 +13,7 @@ import (
 
 func TestLogMessage(t *testing.T) {
 
-	server := newStubServer()
+	server := newStubServer(8)
 	defer server.Close()
 
 	connectionString := server.connectionString()
@@ -62,6 +62,84 @@ func TestLogMessage(t *testing.T) {
 			}
 			if data.SeverityLevel != c.severityLevel {
 				t.Errorf("incorrect level: %d", data.SeverityLevel)
+			}
+		})
+	}
+}
+
+func TestLogLevel(t *testing.T) {
+
+	server := newStubServer(8)
+	defer server.Close()
+
+	connectionString := server.connectionString()
+
+	ctx := context.Background()
+
+	cases := []struct {
+		name     string
+		minLevel slog.Leveler
+		items    []int
+	}{
+		{
+			"debug",
+			slog.LevelDebug,
+			[]int{0, 1, 2, 3, 4},
+		},
+		{
+			"info",
+			slog.LevelInfo,
+			[]int{1, 2, 3, 4},
+		},
+		{
+			"warn",
+			slog.LevelWarn,
+			[]int{2, 3, 4},
+		},
+		{
+			"error",
+			slog.LevelError,
+			[]int{3, 4},
+		},
+		{
+			"fatal",
+			appinsights.LevelFatal,
+			[]int{4},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+
+			opts := appinsights.NewHandlerOptions(c.minLevel)
+			opts.Client = server.Client()
+
+			handler, err := appinsights.NewHandler(connectionString, opts)
+			if err != nil {
+				t.Fatalf("failed to create handler: %v", err)
+			}
+
+			logger := slog.New(handler)
+			logger.Log(ctx, slog.LevelDebug, "debug message")
+			logger.Log(ctx, slog.LevelInfo, "info message")
+			logger.Log(ctx, slog.LevelWarn, "warn message")
+			logger.Log(ctx, slog.LevelError, "error message")
+			logger.Log(ctx, appinsights.LevelFatal, "fatal message")
+
+			handler.Close()
+
+			items := server.telemetryItems()
+			if len(items) != len(c.items) {
+				t.Errorf("expected count is %d, but actual count was %d", len(c.items), len(items))
+			}
+
+			i := 0
+			for _, item := range items {
+				level := item.Data.BaseData.SeverityLevel
+				if level != c.items[i] {
+					t.Errorf("expected level is %d, but actual level was %d", c.items[i], level)
+				}
+				i++
 			}
 		})
 	}
@@ -176,7 +254,7 @@ func attrsCases() []attrTestCase {
 
 func TestLogMessageWithAttributes(t *testing.T) {
 
-	server := newStubServer()
+	server := newStubServer(8)
 	defer server.Close()
 
 	connectionString := server.connectionString()
@@ -209,7 +287,7 @@ func TestLogMessageWithAttributes(t *testing.T) {
 
 func TestWithAttrs(t *testing.T) {
 
-	server := newStubServer()
+	server := newStubServer(8)
 	defer server.Close()
 
 	connectionString := server.connectionString()
@@ -243,7 +321,7 @@ func TestWithAttrs(t *testing.T) {
 
 func TestWithGroup(t *testing.T) {
 
-	server := newStubServer()
+	server := newStubServer(8)
 	defer server.Close()
 
 	opts := appinsights.NewHandlerOptions(nil)
@@ -276,7 +354,7 @@ func TestWithGroup(t *testing.T) {
 
 func TestWithEmptyGroup(t *testing.T) {
 
-	server := newStubServer()
+	server := newStubServer(8)
 	defer server.Close()
 
 	opts := appinsights.NewHandlerOptions(nil)
