@@ -68,7 +68,8 @@ func NewHandlerOptions(level slog.Leveler) *HandlerOptions {
 // Azure Application Insights resource.
 // The argument connectionString must be a valid connection string
 // given by the target Application Insights resource.
-// If opts is nil, the default options are used.
+// opts must be created by the [NewHandlerOptions] function,
+// or may be nil if the default settings are sufficient.
 func NewHandler(connectionString string, opts *HandlerOptions) (*Handler, error) {
 
 	var params, err = parseConnectionString(connectionString)
