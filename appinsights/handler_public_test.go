@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/microsoft/ApplicationInsights-Go/appinsights/contracts"
 	"github.com/openclosed-dev/slogan/appinsights"
 )
 
@@ -27,12 +28,12 @@ func TestLogMessage(t *testing.T) {
 		name          string
 		level         slog.Level
 		message       string
-		severityLevel int
+		severityLevel contracts.SeverityLevel
 	}{
-		{"info", slog.LevelInfo, "info message", 1},
-		{"warn", slog.LevelWarn, "warn message", 2},
-		{"error", slog.LevelError, "error message", 3},
-		{"debug", slog.LevelDebug, "debug message", 0},
+		{"info", slog.LevelInfo, "info message", contracts.Information},
+		{"warn", slog.LevelWarn, "warn message", contracts.Warning},
+		{"error", slog.LevelError, "error message", contracts.Error},
+		{"debug", slog.LevelDebug, "debug message", contracts.Verbose},
 		//
 		{"fatal", appinsights.LevelFatal, "fatal message", 4},
 		{"critical", appinsights.LevelCritical, "critical message", 4},
@@ -60,7 +61,7 @@ func TestLogMessage(t *testing.T) {
 			if data.Message != c.message {
 				t.Errorf("incorrect message: %s", data.Message)
 			}
-			if data.SeverityLevel != c.severityLevel {
+			if data.SeverityLevel != int(c.severityLevel) {
 				t.Errorf("incorrect level: %d", data.SeverityLevel)
 			}
 		})
@@ -76,35 +77,43 @@ func TestLogLevel(t *testing.T) {
 
 	ctx := context.Background()
 
+	allLevels := [5]contracts.SeverityLevel{
+		contracts.Verbose,
+		contracts.Information,
+		contracts.Warning,
+		contracts.Error,
+		contracts.Critical,
+	}
+
 	cases := []struct {
 		name     string
 		minLevel slog.Leveler
-		items    []int
+		items    []contracts.SeverityLevel
 	}{
 		{
 			"debug",
 			slog.LevelDebug,
-			[]int{0, 1, 2, 3, 4},
+			allLevels[0:],
 		},
 		{
 			"info",
 			slog.LevelInfo,
-			[]int{1, 2, 3, 4},
+			allLevels[1:],
 		},
 		{
 			"warn",
 			slog.LevelWarn,
-			[]int{2, 3, 4},
+			allLevels[2:],
 		},
 		{
 			"error",
 			slog.LevelError,
-			[]int{3, 4},
+			allLevels[3:],
 		},
 		{
 			"fatal",
 			appinsights.LevelFatal,
-			[]int{4},
+			allLevels[4:],
 		},
 	}
 
@@ -136,7 +145,7 @@ func TestLogLevel(t *testing.T) {
 			i := 0
 			for _, item := range items {
 				level := item.Data.BaseData.SeverityLevel
-				if level != c.items[i] {
+				if level != int(c.items[i]) {
 					t.Errorf("expected level is %d, but actual level was %d", c.items[i], level)
 				}
 				i++
@@ -173,7 +182,7 @@ func TestHandlerOptionsWithDefaultValues(t *testing.T) {
 
 	data := items[0].Data.BaseData
 
-	if data.SeverityLevel != 1 {
+	if data.SeverityLevel != int(contracts.Information) {
 		t.Errorf("unexpected severity level: %d", data.SeverityLevel)
 	}
 
