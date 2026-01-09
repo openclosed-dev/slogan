@@ -145,6 +145,43 @@ func TestLogLevel(t *testing.T) {
 	}
 }
 
+func TestHandlerOptionsWithDefaultValues(t *testing.T) {
+
+	server := newStubServer(8)
+	defer server.Close()
+
+	connectionString := server.connectionString()
+
+	// HandlerOptions with default values
+	opts := appinsights.HandlerOptions{}
+	opts.Client = server.Client()
+
+	handler, err := appinsights.NewHandler(connectionString, &opts)
+	if err != nil {
+		t.Fatalf("failed to create handler: %v", err)
+	}
+
+	logger := slog.New(handler)
+	logger.Info("info message")
+
+	handler.Close()
+
+	items := server.telemetryItems()
+	if len(items) != 1 {
+		t.Errorf("too many telemetry items: %d", len(items))
+	}
+
+	data := items[0].Data.BaseData
+
+	if data.SeverityLevel != 1 {
+		t.Errorf("unexpected severity level: %d", data.SeverityLevel)
+	}
+
+	if data.Message != "info message" {
+		t.Errorf("unexpected message: %s", data.Message)
+	}
+}
+
 type attrMap map[string]string
 
 type attrTestCase struct {

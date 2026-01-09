@@ -20,13 +20,16 @@ const (
 )
 
 const (
-	defaultLogLevel       = slog.LevelInfo
-	ingestionEndpointPath = "/v2/track"
+	defaultLogLevel         = slog.LevelInfo
+	ingestionEndpointPath   = "/v2/track"
+	defaultMaxBatchSize     = 1024
+	defaultMaxBatchInterval = time.Duration(10) * time.Second
 )
 
 // HandlerOptions are options for a [Handler].
 type HandlerOptions struct {
 	// Level reports the minimum record level that will be logged.
+	// Default value is [slog.LevelInfo].
 	Level slog.Leveler
 	// MaxBatchSize is the maximum number of log records.
 	// that can be submitted in a request.
@@ -40,7 +43,7 @@ type HandlerOptions struct {
 // Handler is a [slog.Handler] that submits log records to
 // Azure Application Insights.
 type Handler struct {
-	opts   HandlerOptions
+	opts   *HandlerOptions
 	client appinsights.TelemetryClient
 	level  slog.Leveler
 	// keyPrefix is empty or otherwise ends with period.
@@ -56,8 +59,8 @@ func NewHandlerOptions(level slog.Leveler) *HandlerOptions {
 	}
 	return &HandlerOptions{
 		Level:            level,
-		MaxBatchSize:     1024,
-		MaxBatchInterval: time.Duration(10) * time.Second,
+		MaxBatchSize:     defaultMaxBatchSize,
+		MaxBatchInterval: defaultMaxBatchInterval,
 	}
 }
 
@@ -67,17 +70,16 @@ func NewHandlerOptions(level slog.Leveler) *HandlerOptions {
 // given by the target Application Insights resource.
 // If opts is nil, the default options are used.
 func NewHandler(connectionString string, opts *HandlerOptions) (*Handler, error) {
-	if opts == nil {
-		opts = NewHandlerOptions(defaultLogLevel)
-	}
 
 	var params, err = parseConnectionString(connectionString)
 	if err != nil {
 		return nil, err
 	}
 
+	opts = fillHandlerOptions(opts)
+
 	return &Handler{
-		opts:       *opts,
+		opts:       opts,
 		client:     newTelemetryClient(params, opts),
 		level:      opts.Level,
 		attributes: make(map[string]string),
@@ -133,6 +135,40 @@ func (h *Handler) Close() {
 		case <-client.Channel().Close(10 * time.Second):
 		case <-time.After(30 * time.Second):
 		}
+	}
+}
+
+func fillHandlerOptions(opts *HandlerOptions) *HandlerOptions {
+	if opts == nil {
+		return NewHandlerOptions(defaultLogLevel)
+	}
+
+	var level slog.Leveler
+	if opts.Level != nil {
+		level = opts.Level
+	} else {
+		level = defaultLogLevel
+	}
+
+	var maxBatchSize int
+	if opts.MaxBatchSize > 0 {
+		maxBatchSize = opts.MaxBatchSize
+	} else {
+		maxBatchSize = defaultMaxBatchSize
+	}
+
+	var maxBatchInterval time.Duration
+	if opts.MaxBatchInterval > 0 {
+		maxBatchInterval = opts.MaxBatchInterval
+	} else {
+		maxBatchInterval = defaultMaxBatchInterval
+	}
+
+	return &HandlerOptions{
+		level,
+		maxBatchSize,
+		maxBatchInterval,
+		opts.Client,
 	}
 }
 
