@@ -52,6 +52,16 @@ func main() {
 }
 ```
 
+## CLI
+
+A command line program `appinsights` is available for sending the lines you type to Azure Application Insights. The following command will install the program.
+
+```
+go install github.com/openclosed-dev/slogan/cmd/appinsights
+```
+
+Before invoking the command, you must define your Application Insights connection string  in the environment variable `APPLICATIONINSIGHTS_CONNECTION_STRING`
+
 ## Known Issue
 
 This module depends on the module [github.com/microsoft/ApplicationInsights-Go](https://pkg.go.dev/github.com/microsoft/ApplicationInsights-Go) developed by Microsoft, that is not actively maintained for several years.
