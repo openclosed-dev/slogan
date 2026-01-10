@@ -14,6 +14,7 @@ const instrumentationKey = "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
 
 // Trace telemetry item collected by Application Insights
 type telemetry struct {
+	Time string `json:"time"`
 	IKey string `json:"iKey"`
 	Data struct {
 		BaseType string `json:"baseType"`
